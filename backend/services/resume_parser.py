@@ -1,11 +1,11 @@
 import io
-import magic
+
 from typing import Tuple, Optional, Tuple
 
 import pdfplumber
 from docx import Document
 import PyPDF2
-
+from pathlib import Path
 from backend.utils.file_utils import(
     FileParsingError, 
     TextExtractionError, 
@@ -41,20 +41,27 @@ def validate_file(file_data:bytes, filename:str)->Tuple[bool, str, Optional[str]
         return False, 'uploade file is empty...please check the file you have uploaded and try again'
     
     try:
-        mime_type=magic.from_buffer(file_data, mime=True)
-    except Exception as e:
-        return False, f"error deteminin the file type : {e}", None
-    
-    if mime_type not in SUPPORTED_MIME_TYPES:
-        supported=', '.join(SUPPORTED_MIME_TYPES.keys()).upper()
-        return False, (
-            f'Unsupported file type: {mime_type}. '
-            f'Please upload one of: {supported}.'
-        ), None
-    
-    
+        extension = Path(filename).suffix.lower()
 
-    return True, '', SUPPORTED_MIME_TYPES[mime_type]
+        extension_map = {
+            ".pdf": "pdf",
+            ".docx": "docx",
+            ".doc": "doc",
+        }
+
+        if extension not in extension_map:
+            supported = ", ".join(["PDF", "DOCX", "DOC"])
+            return False, (
+                f"Unsupported file extension: {extension or 'unknown'}. "
+                f"Please upload one of: {supported}."
+            ), None
+
+        file_type = extension_map[extension]
+
+    except Exception as e:
+        return False, f"Error determining the file type: {e}", None
+
+    return True, "", file_type
 
 def _extract_pdf_hyperlinks(file_data: bytes) -> str:
     urls = []
