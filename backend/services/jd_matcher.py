@@ -1,20 +1,15 @@
 from typing import List, Dict
 import numpy as np
 import spacy
-from sentence_transformers import SentenceTransformer
-
-from typing import List, Dict
-import numpy as np
-import spacy
-from sentence_transformers import SentenceTransformer
 
 from backend.utils.matching import fuzzy_match_keywords, normalize_skill
 from rapidfuzz import fuzz
-
+from backend.core.embedder import get_embedder
 
 def calculate_semantic_similarity(
-    resume_text: str, jd_text: str, embedder: SentenceTransformer
+    resume_text: str, jd_text: str
 ) -> float:
+    embedder = get_embedder()
     resume_emb = embedder.encode(resume_text[:5000], convert_to_tensor=False)
     jd_emb     = embedder.encode(jd_text[:5000], convert_to_tensor=False)
 
@@ -90,14 +85,15 @@ def calculate_match_percentage(
 
 
 def compare_resume_with_jd(
+   
     resume_text: str,
     resume_keywords: List[str],
     resume_skills: List[str],
     jd_text: str,
     jd_keywords: List[str],
-    embedder: SentenceTransformer,
     nlp: spacy.Language,
 ) -> Dict:
+    embedder = get_embedder()
     semantic_similarity = calculate_semantic_similarity(resume_text, jd_text, embedder)
     matched_keywords    = identify_matched_keywords(resume_keywords, jd_keywords)
     missing_keywords    = identify_missing_keywords(resume_keywords, jd_keywords)
