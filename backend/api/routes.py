@@ -10,7 +10,7 @@ from backend.utils.file_utils import (
     get_default_location_results,
     get_default_skill_validation_results,
 )
-
+from backend.core.embedder import get_embedder
 logger = logging.getLogger('ats_resume_scorer')
 
 router = APIRouter(prefix='/api/v1', tags=['Analysis'])
@@ -31,7 +31,9 @@ async def analyze_resume(
 
 
     nlp      = request.app.state.nlp
-    embedder = request.app.state.embedder
+    from backend.core.embedder import get_embedder
+
+    embedder = get_embedder()
 
 
     try:
@@ -127,7 +129,7 @@ async def health_check(request: Request):
     return {
         'status':          'healthy',
         'nlp_loaded':      request.app.state.nlp is not None,
-        'embedder_loaded': request.app.state.embedder is not None,
+        'embedder_loaded': request.get_embedder() is not None,
     }
 
 @router.get('/history')
