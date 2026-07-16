@@ -1,5 +1,4 @@
 fastapi>=0.110
-sentence-transformers>=2.5
 uvicorn[standard]>=0.27
 pydantic>=2.6
 python-multipart>=0.0.9
@@ -23,3 +22,4 @@ groq>=0.13
 PyJWT[crypto]>=2.8
 
 supabase>=2.4
+requests>=2.31

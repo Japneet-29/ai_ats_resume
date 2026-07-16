@@ -10,14 +10,15 @@ try:
     load_dotenv(_ENV_PATH)
 except ImportError:
     pass
-
+JINA_API_KEY = os.getenv("JINA_API_KEY", "")
 #api metadata
 APP_TITLE='ATS RESUME ANALYZER API'
 APP_VERSION='1.0.0'
 APP_DESCRIPTION='analyse resumes against job description using nlp + ml'
 
 ALLOWED_ORIGINS = [
-    'https://aiatsresume-mh3xpwk7waunqlnjzzpjww.streamlit.app/'
+    'https://aiatsresume-mh3xpwk7waunqlnjzzpjww.streamlit.app/',
+    'http://localhost:8000/'
 ]  
 
 #file 
@@ -33,9 +34,8 @@ SUPPORTED_MIME_TYPES = {
 
 SUPPORTED_EXTENSIONS = {'.pdf', '.doc', '.docx'}
 
-SPACY_MODEL_PRIMARY= "en_core_web_sm"#better accuracy
+SPACY_MODEL_PRIMARY= "en_core_web_sm"
 SPACY_MODEL_SECONDARY="en_core_web_md"
-SENTENCE_TRANSFORMER_MODEL = os.getenv("SENTENCE_TRANSFORMER_MODEL", "all-MiniLM-L6-v2")
 
 # Score component weights — this is business logic treated as config
 SCORE_WEIGHTS = {

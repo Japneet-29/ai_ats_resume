@@ -10,8 +10,8 @@ def calculate_semantic_similarity(
     resume_text: str, jd_text: str
 ) -> float:
     embedder = get_embedder()
-    resume_emb = embedder.encode(resume_text[:5000], convert_to_tensor=False)
-    jd_emb     = embedder.encode(jd_text[:5000], convert_to_tensor=False)
+    resume_emb = embedder.encode(resume_text[:5000])
+    jd_emb     = embedder.encode(jd_text[:5000])
 
     similarity = np.dot(resume_emb, jd_emb) / (
         np.linalg.norm(resume_emb) * np.linalg.norm(jd_emb)

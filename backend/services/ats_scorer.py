@@ -4,7 +4,7 @@ import numpy as np
 from typing import Dict, List, Optional, Tuple
 
 from backend.utils.file_utils import log_warning
-from backend.core.config import SENTENCE_TRANSFORMER_MODEL
+
 from backend.utils.matching import fuzzy_match_keywords
 from backend.core.embedder import get_embedder
 
@@ -72,23 +72,13 @@ def detect_location_info(text: str, nlp: spacy.Language) -> Dict:
         'penalty_applied':    penalty,
     }
 
-def _calculate_semantic_similarity(skill: str, text: str) -> float:
-    #similarity = (A · B) / (|A| × |B|)
-    embedder = get_embedder()
-    if not skill or not text:
-        return 0.0
-    try:
-        skill_vec  = embedder.encode(skill, convert_to_tensor=False)
-        text_vec   = embedder.encode(text,  convert_to_tensor=False)
+def _cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
+    denom = np.linalg.norm(vec1) * np.linalg.norm(vec2)
 
-        similarity = np.dot(skill_vec, text_vec) / (
-            np.linalg.norm(skill_vec) * np.linalg.norm(text_vec)
-        )
-
-        return float(max(0.0, min(1.0, similarity)))
-    except Exception as e:
-        log_warning(f"Similarity error for '{skill}': {e}", context='ats_scorer')
+    if denom == 0:
         return 0.0
+
+    return float(np.dot(vec1, vec2) / denom)
 
 def _skill_matches(skill: str, text: str, threshold: float) -> Tuple[bool, float]:
     embedder = get_embedder()
@@ -97,7 +87,7 @@ def _skill_matches(skill: str, text: str, threshold: float) -> Tuple[bool, float
         return True, 1.0
     
     #slow, semantic similarity check using sentence embeddings
-    sim = _calculate_semantic_similarity(skill, text, embedder)
+    sim = _cosine_similarity(embedder.encode(skill), embedder.encode(text))
     return sim >= threshold, sim
 
 #Skill validation
@@ -107,62 +97,139 @@ def validate_skills_with_projects(
     experience_entries: List[Dict],
     threshold: float = 0.6,
 ) -> Dict:
-    embedder = get_embedder()
+
     if not skills:
         return {
-            'validated_skills':      [],
-            'unvalidated_skills':    [],
-            'validation_percentage': 0.0,
-            'skill_project_mapping': {},
-            'validation_score':      0.0,
+            "validated_skills": [],
+            "unvalidated_skills": [],
+            "validation_percentage": 0.0,
+            "skill_project_mapping": {},
+            "validation_score": 0.0,
         }
 
-    experience_text = ' '.join(
-        f"{e.get('job_title', '')} {e.get('company', '')} {e.get('description', '')}"
+    embedder = get_embedder()
+
+    experience_text = " ".join(
+        f"{e.get('job_title','')} {e.get('company','')} {e.get('description','')}"
         for e in experience_entries
         if isinstance(e, dict)
     ).strip()
 
-    validated_skills      = []
-    unvalidated_skills    = []
+    project_texts = [
+        f"{p.get('title','')} {p.get('description','')}"
+        for p in projects
+    ]
+
+    #
+    # ONE API CALL
+    #
+    skill_vectors = embedder.encode(skills)
+
+    #
+    # ONE API CALL
+    #
+    project_vectors = embedder.encode(project_texts) if project_texts else []
+
+    #
+    # ONE API CALL
+    #
+    experience_vector = (
+        embedder.encode([experience_text])[0]
+        if experience_text
+        else None
+    )
+
+    validated_skills = []
+    unvalidated_skills = []
     skill_project_mapping = {}
 
-    for skill in skills:
-        matching_projects = []
-        max_similarity    = 0.0
+    for i, skill in enumerate(skills):
 
-        for project in projects:
-            project_text = f"{project.get('title', '')} {project.get('description', '')}"
-            matched, sim = _skill_matches(skill, project_text, embedder, threshold)
-            max_similarity = max(max_similarity, sim)
+        skill_vector = skill_vectors[i]
 
-            if matched:
-                matching_projects.append(project.get('title', 'Untitled Project'))
+        matched_projects = []
+        best_similarity = 0.0
 
-        if experience_text:
-            matched, sim = _skill_matches(skill, experience_text, embedder, threshold)
-            max_similarity = max(max_similarity, sim)
-            if matched and 'Experience Section' not in matching_projects:
-                matching_projects.append('Experience Section')
+        #
+        # FAST substring first
+        #
+        for j, project_text in enumerate(project_texts):
 
-        if matching_projects:
-            validated_skills.append({'skill': skill, 'projects': matching_projects, 'similarity': max_similarity})
-            skill_project_mapping[skill] = matching_projects
+            if skill.lower() in project_text.lower():
+
+                matched_projects.append(
+                    projects[j].get("title", "Untitled Project")
+                )
+
+                best_similarity = 1.0
+                continue
+
+            similarity = _cosine_similarity(
+                skill_vector,
+                project_vectors[j],
+            )
+
+            if similarity > best_similarity:
+                best_similarity = similarity
+
+            if similarity >= threshold:
+
+                matched_projects.append(
+                    projects[j].get("title", "Untitled Project")
+                )
+
+        #
+        # Experience
+        #
+        if experience_vector is not None:
+
+            if skill.lower() in experience_text.lower():
+
+                if "Experience Section" not in matched_projects:
+                    matched_projects.append("Experience Section")
+
+                best_similarity = 1.0
+
+            else:
+
+                similarity = _cosine_similarity(
+                    skill_vector,
+                    experience_vector,
+                )
+
+                best_similarity = max(best_similarity, similarity)
+
+                if similarity >= threshold:
+
+                    if "Experience Section" not in matched_projects:
+                        matched_projects.append("Experience Section")
+
+        if matched_projects:
+
+            validated_skills.append(
+                {
+                    "skill": skill,
+                    "projects": matched_projects,
+                    "similarity": round(best_similarity, 3),
+                }
+            )
+
+            skill_project_mapping[skill] = matched_projects
+
         else:
+
             unvalidated_skills.append(skill)
             skill_project_mapping[skill] = []
 
     validation_percentage = len(validated_skills) / len(skills)
-    validation_score      = validation_percentage * 15.0
 
     return {
-        'validated_skills':      validated_skills,
-        'unvalidated_skills':    unvalidated_skills,
-        'validation_percentage': validation_percentage,
-        'skill_project_mapping': skill_project_mapping,
-        'validation_score':      validation_score,
+        "validated_skills": validated_skills,
+        "unvalidated_skills": unvalidated_skills,
+        "validation_percentage": validation_percentage,
+        "skill_project_mapping": skill_project_mapping,
+        "validation_score": validation_percentage * 15,
     }
-
 #01: formatting score
 def _calc_formatting_score(parsed_resume: Dict, text: str) -> float:
 
