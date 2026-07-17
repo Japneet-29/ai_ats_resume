@@ -72,9 +72,8 @@ def detect_location_info(text: str, nlp: spacy.Language) -> Dict:
         'penalty_applied':    penalty,
     }
 
-def _calculate_semantic_similarity(skill: str, text: str) -> float:
+def _calculate_semantic_similarity(skill: str, text: str, embedder) -> float:
     #similarity = (A · B) / (|A| × |B|)
-    embedder = get_embedder()
     if not skill or not text:
         return 0.0
     try:
@@ -90,8 +89,7 @@ def _calculate_semantic_similarity(skill: str, text: str) -> float:
         log_warning(f"Similarity error for '{skill}': {e}", context='ats_scorer')
         return 0.0
 
-def _skill_matches(skill: str, text: str, threshold: float) -> Tuple[bool, float]:
-    embedder = get_embedder()
+def _skill_matches(skill: str, text: str,embedder, threshold: float) -> Tuple[bool, float]:
     #fast, o(n) directly check if skill is a substring of the text (case-insensitive)
     if skill.lower() in text.lower():
         return True, 1.0
@@ -105,9 +103,11 @@ def validate_skills_with_projects(
     skills: List[str],
     projects: List[Dict],
     experience_entries: List[Dict],
+    embedder,
     threshold: float = 0.6,
+    
 ) -> Dict:
-    embedder = get_embedder()
+    
     if not skills:
         return {
             'validated_skills':      [],
