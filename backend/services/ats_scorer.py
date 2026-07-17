@@ -77,8 +77,8 @@ def _calculate_semantic_similarity(skill: str, text: str, embedder) -> float:
     if not skill or not text:
         return 0.0
     try:
-        skill_vec  = embedder.encode(skill, convert_to_tensor=False)
-        text_vec   = embedder.encode(text,  convert_to_tensor=False)
+        skill_vec  = embedder.encode(skill)
+        text_vec   = embedder.encode(text)
 
         similarity = np.dot(skill_vec, text_vec) / (
             np.linalg.norm(skill_vec) * np.linalg.norm(text_vec)
