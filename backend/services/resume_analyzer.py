@@ -10,10 +10,10 @@ from backend.core.embedder import get_embedder
 def analyze_full_resume(
     resume_text: str,
     nlp: spacy.Language,
-    
+    embedder,
     job_description: Optional[str] = None,
 ) -> Dict:
-    embedder = get_embedder()
+    
     import logging
     logger = logging.getLogger('ats_resume_scorer')
     parsed_resume = parse_resume(resume_text)

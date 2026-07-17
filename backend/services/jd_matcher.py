@@ -7,11 +7,10 @@ from rapidfuzz import fuzz
 from backend.core.embedder import get_embedder
 
 def calculate_semantic_similarity(
-    resume_text: str, jd_text: str
+    resume_text: str, jd_text: str, embedder
 ) -> float:
-    embedder = get_embedder()
-    resume_emb = embedder.encode(resume_text[:5000])
-    jd_emb     = embedder.encode(jd_text[:5000])
+    resume_emb = embedder.encode(resume_text[:5000], convert_to_tensor=False)
+    jd_emb     = embedder.encode(jd_text[:5000], convert_to_tensor=False)
 
     similarity = np.dot(resume_emb, jd_emb) / (
         np.linalg.norm(resume_emb) * np.linalg.norm(jd_emb)
@@ -92,8 +91,8 @@ def compare_resume_with_jd(
     jd_text: str,
     jd_keywords: List[str],
     nlp: spacy.Language,
+    embedder,
 ) -> Dict:
-    embedder = get_embedder()
     semantic_similarity = calculate_semantic_similarity(resume_text, jd_text, embedder)
     matched_keywords    = identify_matched_keywords(resume_keywords, jd_keywords)
     missing_keywords    = identify_missing_keywords(resume_keywords, jd_keywords)
