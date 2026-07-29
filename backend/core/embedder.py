@@ -14,7 +14,7 @@ class JinaEmbedder:
             "Content-Type": "application/json",
         }
 
-    def encode(self, texts):
+    def encode(self, texts, **kwargs):
         if isinstance(texts, str):
             texts = [texts]
 
