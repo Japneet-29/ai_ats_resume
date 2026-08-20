@@ -13,7 +13,6 @@ A web app that scores how well a resume matches a job description and returns ac
 
 - **Frontend:** https://aiatsresume-mh3xpwk7waunqlnjzzpjww.streamlit.app/
 - **Backend API:** https://<https://ai-ats-resume-hey0.onrender.com>
-- **Swagger API Docs:** https://ai-ats-resume-hey0.onrender.com>/docs
 ## Tech stack
 
 - **Frontend:** Streamlit
