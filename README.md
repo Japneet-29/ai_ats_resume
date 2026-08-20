@@ -9,6 +9,11 @@ A web app that scores how well a resume matches a job description and returns ac
 3. You get an ATS score, a breakdown by category (formatting, keywords, content, skill validation, ATS compatibility), and LLM-written suggestions for what to improve.
 4. Past analyses are saved to your account so you can revisit them.
 
+## Live Demo
+
+- **Frontend:** https://aiatsresume-mh3xpwk7waunqlnjzzpjww.streamlit.app/
+- **Backend API:** https://<https://ai-ats-resume-hey0.onrender.com>
+- **Swagger API Docs:** https://ai-ats-resume-hey0.onrender.com>/docs
 ## Tech stack
 
 - **Frontend:** Streamlit
