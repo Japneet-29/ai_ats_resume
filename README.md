@@ -2,6 +2,11 @@
 
 A web application that analyzes how well a resume matches a job description and provides an ATS score along with actionable feedback. Built with FastAPI and Streamlit, using spaCy for NLP, Jina Embeddings for semantic similarity, and the Groq API for AI-generated recommendations.
 
+# 🚀 Live Demo
+
+Frontend (Streamlit): https://aiatsresume-mh3xpwk7waunqlnjzzpjww.streamlit.app/
+
+Backend API (FastAPI):  https://ai-ats-resume-hey0.onrender.com
 ## Features
 
 - Upload resumes in **PDF**, **DOC**, or **DOCX** format.
